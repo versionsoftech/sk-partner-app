@@ -8,7 +8,8 @@ class BottomNavItemWidget extends StatelessWidget {
   final String title;
   final Function? onTap;
   final bool isSelected;
-  const BottomNavItemWidget({super.key, this.onTap, this.isSelected = false, required this.title, required this.selectedIcon, required this.unSelectedIcon});
+  final bool useRupeeIcon;
+  const BottomNavItemWidget({super.key, this.onTap, this.isSelected = false, required this.title, required this.selectedIcon, required this.unSelectedIcon, this.useRupeeIcon = false});
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +22,20 @@ class BottomNavItemWidget extends StatelessWidget {
           opacity: isDisabled ? 0.5 : 1.0,
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
 
-            Image.asset(
-              isSelected ? selectedIcon : unSelectedIcon, height: 25, width: 25,
-              color: isDisabled
-                  ? Theme.of(context).disabledColor
-                  : (isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyMedium!.color!),
-            ),
+            useRupeeIcon
+                ? Icon(
+                    Icons.currency_rupee_rounded,
+                    size: 25,
+                    color: isDisabled
+                        ? Theme.of(context).disabledColor
+                        : (isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyMedium!.color!),
+                  )
+                : Image.asset(
+                    isSelected ? selectedIcon : unSelectedIcon, height: 25, width: 25,
+                    color: isDisabled
+                        ? Theme.of(context).disabledColor
+                        : (isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyMedium!.color!),
+                  ),
 
             SizedBox(height: isSelected ? Dimensions.paddingSizeExtraSmall : Dimensions.paddingSizeSmall),
 

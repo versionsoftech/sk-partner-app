@@ -86,6 +86,10 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     StoreController storeController = Get.find<StoreController>();
     storeController.initStoreData(widget.store);
 
+    // Sync Status toggle with real store active flag (true = open).
+    // Avoid update() during init/build — that caused setState-during-build crash.
+    Get.find<ProfileController>().setStoreStatus(widget.store.active ?? false, shouldUpdate: false);
+
     _orderAmountController.text = widget.store.minimumOrder.toString();
     _minimumDeliveryFeeController.text = widget.store.minimumShippingCharge.toString();
     _maximumDeliveryFeeController.text = widget.store.maximumShippingCharge != null ? widget.store.maximumShippingCharge.toString() : '';
@@ -217,7 +221,8 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                               profileController.profileModel != null ? Transform.scale(
                                 scale: 0.8,
                                 child: CupertinoSwitch(
-                                  value: !profileController.isStoreActive,
+                                  // ON = restaurant open, OFF = temporarily closed
+                                  value: profileController.isStoreActive,
                                   activeTrackColor: Theme.of(context).primaryColor,
                                   inactiveTrackColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                   onChanged: (bool isActive) {
@@ -232,11 +237,12 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                                       },
                                     )) : Get.dialog(ConfirmationDialogWidget(
                                       icon: Images.warning,
-                                      description: isActive ? showRestaurantText! ? 'are_you_sure_to_close_restaurant'.tr : 'are_you_sure_to_close_store'.tr
-                                          : showRestaurantText! ? 'are_you_sure_to_open_restaurant'.tr : 'are_you_sure_to_open_store'.tr,
+                                      description: isActive
+                                          ? (showRestaurantText! ? 'are_you_sure_to_open_restaurant'.tr : 'are_you_sure_to_open_store'.tr)
+                                          : (showRestaurantText! ? 'are_you_sure_to_close_restaurant'.tr : 'are_you_sure_to_close_store'.tr),
                                       onYesPressed: () {
                                         Get.back();
-                                        profileController.setStoreStatus(!isActive);
+                                        profileController.setStoreStatus(isActive);
                                         Get.find<AuthController>().toggleStoreClosedStatus();
                                       },
                                     ));

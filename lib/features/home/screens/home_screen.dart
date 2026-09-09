@@ -7,6 +7,8 @@ import 'package:sixam_mart_store/features/notification/controllers/notification_
 import 'package:sixam_mart_store/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart_store/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart_store/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart_store/features/home/widgets/order_alert_setup_dialog.dart';
+import 'package:sixam_mart_store/helper/order_alert_helper.dart';
 import 'package:sixam_mart_store/helper/route_helper.dart';
 import 'package:sixam_mart_store/util/dimensions.dart';
 import 'package:sixam_mart_store/util/images.dart';
@@ -28,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final AppLifecycleListener _listener;
   bool _isNotificationPermissionGranted = true;
   bool _isBatteryOptimizationGranted = true;
+  bool _wasPaused = false;
   final JustTheController tooltipController = JustTheController();
 
   @override
@@ -44,6 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     Future.delayed(const Duration(milliseconds: 200), () {
       checkPermission();
+    });
+
+    // Prompt battery / autostart permissions so continuous beep works when app is killed.
+    Future.delayed(const Duration(seconds: 2), () {
+      OrderAlertSetupDialog.showIfNeeded();
     });
   }
 
@@ -64,6 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case AppLifecycleState.detached:
         break;
       case AppLifecycleState.resumed:
+        if (_wasPaused) {
+          _wasPaused = false;
+          OrderAlertHelper.stop();
+        }
         Future.delayed(const Duration(milliseconds: 200), () {
           checkPermission();
         });
@@ -71,8 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case AppLifecycleState.inactive:
         break;
       case AppLifecycleState.hidden:
+        _wasPaused = true;
         break;
       case AppLifecycleState.paused:
+        _wasPaused = true;
         break;
     }
   }
@@ -119,16 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void requestBatteryOptimization() async {
-    var status = await Permission.ignoreBatteryOptimizations.status;
-
-    if (status.isGranted) {
-      return;
-    } else if(status.isDenied) {
-      await Permission.ignoreBatteryOptimizations.request();
-    } else {
-      openAppSettings();
-    }
-
+    await OrderAlertSetupDialog.showNow();
     checkPermission();
   }
 

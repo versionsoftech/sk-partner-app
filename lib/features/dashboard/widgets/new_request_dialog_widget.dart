@@ -1,7 +1,6 @@
-import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:sixam_mart_store/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart_store/features/rental_module/trips/screens/trip_details_screen.dart';
+import 'package:sixam_mart_store/helper/order_alert_helper.dart';
 import 'package:sixam_mart_store/helper/route_helper.dart';
 import 'package:sixam_mart_store/util/dimensions.dart';
 import 'package:sixam_mart_store/util/images.dart';
@@ -20,68 +19,47 @@ class NewRequestDialogWidget extends StatefulWidget {
 }
 
 class _NewRequestDialogWidgetState extends State<NewRequestDialogWidget> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _startAlarm();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-
-    _timer?.cancel();
-  }
-
-  void _startAlarm() async {
-    AudioPlayer audio = AudioPlayer();
-    audio.play(AssetSource('notification.mp3'));
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      audio.play(AssetSource('notification.mp3'));
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
 
     bool isRental = Get.find<AuthController>().getModuleType() == 'rental';
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusSmall)),
-      child: Padding(
-        padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
+    return PopScope(
+      canPop: false,
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusSmall)),
+        child: Padding(
+          padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
 
-          Image.asset(Images.notificationIn, height: 60, color: Theme.of(context).primaryColor),
+            Image.asset(Images.notificationIn, height: 60, color: Theme.of(context).primaryColor),
 
-          Padding(
-            padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-            child: Text(
-              isRental ? 'new_trip_booked'.tr : 'new_order_placed'.tr, textAlign: TextAlign.center,
-              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeLarge),
+            Padding(
+              padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+              child: Text(
+                isRental ? 'new_trip_booked'.tr : 'new_order_placed'.tr, textAlign: TextAlign.center,
+                style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeLarge),
+              ),
             ),
-          ),
 
-          CustomButtonWidget(
-            height: 40,
-            buttonText: 'ok'.tr,
-            onPressed: () {
-              _timer?.cancel();
-              if(Get.isDialogOpen!) {
-                Get.back();
-              }
-              if(isRental) {
-                Get.offAll(() => TripDetailsScreen(tripId: widget.orderId, fromNotification: true));
-              } else{
-                Get.offAllNamed(RouteHelper.getOrderDetailsRoute(widget.orderId, fromNotification: true));
-              }
-            },
-          ),
+            CustomButtonWidget(
+              height: 40,
+              buttonText: 'ok'.tr,
+              onPressed: () async {
+                await OrderAlertHelper.stop();
+                if(Get.isDialogOpen!) {
+                  Get.back();
+                }
+                if(isRental) {
+                  Get.offAll(() => TripDetailsScreen(tripId: widget.orderId, fromNotification: true));
+                } else{
+                  Get.offAllNamed(RouteHelper.getOrderDetailsRoute(widget.orderId, fromNotification: true));
+                }
+              },
+            ),
 
-        ]),
+          ]),
+        ),
       ),
     );
   }

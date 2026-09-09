@@ -34,6 +34,7 @@ import 'package:sixam_mart_store/features/order_edit/controllers/order_edit_cont
 import 'package:sixam_mart_store/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart_store/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart_store/helper/date_converter_helper.dart';
+import 'package:sixam_mart_store/helper/order_alert_helper.dart';
 import 'package:sixam_mart_store/helper/price_converter_helper.dart';
 import 'package:sixam_mart_store/helper/route_helper.dart';
 import 'package:sixam_mart_store/util/app_constants.dart';
@@ -94,6 +95,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> with WidgetsBin
     super.initState();
 
     WidgetsBinding.instance.addObserver(this);
+    // Stop continuous new-order beep/vibration once the vendor opens the order.
+    OrderAlertHelper.stop();
     Get.find<OrderController>().clearPreviousData();
     loadData();
   }
@@ -736,6 +739,86 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> with WidgetsBin
                         ]),
                       ])),
                     const SizedBox(height: Dimensions.paddingSizeDefault)],
+
+                  /// Delivery man details (shown once a rider is assigned)
+                  if (order.deliveryMan != null) ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                        boxShadow: [BoxShadow(offset: Offset(0, 3), color: Colors.grey[Get.isDarkMode ? 700 : 200]!, blurRadius: 8, spreadRadius: 0)],
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('delivery_man'.tr, style: robotoBold),
+                        Divider(thickness: 1, color: Theme.of(context).hintColor.withValues(alpha: 0.1)),
+                        Row(children: [
+                          ClipOval(child: CustomImageWidget(
+                            image: order.deliveryMan!.imageFullUrl ?? '',
+                            height: 55, width: 55, fit: BoxFit.cover,
+                          )),
+                          const SizedBox(width: Dimensions.paddingSizeSmall),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(
+                                '${order.deliveryMan!.fName ?? ''} ${order.deliveryMan!.lName ?? ''}'.trim(),
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: robotoMedium,
+                              ),
+                              if ((order.deliveryMan!.phone ?? '').isNotEmpty)
+                                Text(
+                                  order.deliveryMan!.phone!,
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: robotoRegular.copyWith(color: Theme.of(context).hintColor),
+                                ),
+                            ]),
+                          ),
+                          if (order.orderStatus != 'delivered' && order.orderStatus != 'failed'
+                              && order.orderStatus != 'canceled' && order.orderStatus != 'refunded')
+                            Row(children: [
+                              if (Get.find<ProfileController>().modulePermission!.chat!)
+                                IconButton(
+                                  onPressed: () async {
+                                    if (Get.find<ProfileController>().profileModel!.subscription != null
+                                        && Get.find<ProfileController>().profileModel!.subscription!.chat == 0
+                                        && Get.find<ProfileController>().profileModel!.stores![0].storeBusinessModel == 'subscription') {
+                                      showCustomSnackBar('you_have_no_available_subscription'.tr);
+                                    } else {
+                                      _timer?.cancel();
+                                      await Get.toNamed(RouteHelper.getChatRoute(
+                                        notificationBody: NotificationBodyModel(
+                                          orderId: order.id, deliveryManId: order.deliveryMan!.id,
+                                        ),
+                                        user: User(
+                                          id: order.deliveryMan!.id,
+                                          fName: order.deliveryMan!.fName,
+                                          lName: order.deliveryMan!.lName,
+                                          imageFullUrl: order.deliveryMan!.imageFullUrl,
+                                        ),
+                                      ));
+                                      _startApiCalling();
+                                    }
+                                  },
+                                  icon: Image.asset(Images.chatIcon, width: 22, height: 22),
+                                ),
+                              if ((order.deliveryMan!.phone ?? '').isNotEmpty)
+                                IconButton(
+                                  onPressed: () async {
+                                    final String phone = order.deliveryMan!.phone ?? '';
+                                    if (await canLaunchUrlString('tel:$phone')) {
+                                      launchUrlString('tel:$phone', mode: LaunchMode.externalApplication);
+                                    } else {
+                                      showCustomSnackBar('${'can_not_launch'.tr} $phone');
+                                    }
+                                  },
+                                  icon: Image.asset(Images.callIcon, width: 22, height: 22),
+                                ),
+                            ]),
+                        ]),
+                      ]),
+                    ),
+                    const SizedBox(height: Dimensions.paddingSizeDefault),
+                  ],
 
                   /// cutlery
                   // Get.find<SplashController>().getModuleConfig(order.moduleType).newVariation!

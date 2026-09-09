@@ -8,6 +8,7 @@ import 'package:sixam_mart_store/features/notification/domain/models/notificatio
 import 'package:sixam_mart_store/features/rental_module/chat/screens/taxi_chat_screen.dart';
 import 'package:sixam_mart_store/features/rental_module/profile/controllers/taxi_profile_controller.dart';
 import 'package:sixam_mart_store/features/rental_module/trips/screens/trip_details_screen.dart';
+import 'package:sixam_mart_store/helper/order_alert_helper.dart';
 import 'package:sixam_mart_store/helper/route_helper.dart';
 import 'package:sixam_mart_store/util/app_constants.dart';
 import 'package:sixam_mart_store/util/dimensions.dart';
@@ -32,6 +33,9 @@ class SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+
+    // App UI opened — stop continuous native order beep/vibrate.
+    OrderAlertHelper.stop();
 
     bool firstTime = true;
     _onConnectivityChanged = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) {
@@ -143,12 +147,8 @@ class SplashScreenState extends State<SplashScreen> {
       Get.find<AuthController>().getModuleType() == 'rental' ? await Get.find<TaxiProfileController>().getProfile() : await Get.find<ProfileController>().getProfile();
       Get.offNamed(RouteHelper.getInitialRoute());
     } else {
-      final bool showIntro = Get.find<SplashController>().showIntro();
-      if(AppConstants.languages.length > 1 && showIntro) {
-        Get.offNamed(RouteHelper.getLanguageRoute('splash'));
-      }else {
-        Get.offNamed(RouteHelper.getSignInRoute());
-      }
+      Get.find<SplashController>().setIntro(false);
+      Get.offNamed(RouteHelper.getSignInRoute());
     }
   }
 

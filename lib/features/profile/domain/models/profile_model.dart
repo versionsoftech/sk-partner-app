@@ -341,7 +341,7 @@ class Store {
     ratingCount = json['rating_count'];
     totalItems = json['total_items'];
     totalOrder = json['total_order'].toString();
-    active = json['active'];
+    active = json['active'] == true || json['active'] == 1 || json['active'] == '1';
     gstStatus = json['gst_status'];
     gstCode = json['gst_code'];
     selfDeliverySystem = json['self_delivery_system'];

@@ -10,6 +10,7 @@ import 'package:sixam_mart_store/common/widgets/switch_button_widget.dart';
 import 'package:sixam_mart_store/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart_store/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart_store/features/language/widgets/language_bottom_sheet_widget.dart';
+import 'package:sixam_mart_store/features/home/widgets/order_alert_setup_dialog.dart';
 import 'package:sixam_mart_store/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart_store/features/profile/widgets/notification_status_change_bottom_sheet.dart';
 import 'package:sixam_mart_store/util/app_constants.dart';
@@ -92,6 +93,29 @@ class _SettingScreenState extends State<SettingScreen> {
                   ]),
                 ),
               ) : const SizedBox(),
+
+              if (GetPlatform.isAndroid) ...[
+                const SizedBox(height: Dimensions.paddingSizeSmall),
+                InkWell(
+                  onTap: () => OrderAlertSetupDialog.showNow(),
+                  child: DetailsCustomCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: Dimensions.paddingSizeSmall),
+                    child: Row(children: [
+                      const SizedBox(width: Dimensions.paddingSizeDefault),
+                      const Icon(Icons.volume_up_rounded, size: 25),
+                      const SizedBox(width: Dimensions.paddingSizeSmall),
+                      Expanded(
+                        child: Text(
+                          'Continuous order alert permissions',
+                          style: robotoRegular,
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 16),
+                      const SizedBox(width: Dimensions.paddingSizeDefault),
+                    ]),
+                  ),
+                ),
+              ],
 
               SizedBox(height: Dimensions.paddingSizeExtraOverLarge),
 

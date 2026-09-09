@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -24,6 +23,7 @@ import 'package:sixam_mart_store/features/rental_module/trips/controllers/trip_c
 import 'package:sixam_mart_store/features/rental_module/trips/screens/trip_details_screen.dart';
 import 'package:sixam_mart_store/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart_store/helper/custom_print_helper.dart';
+import 'package:sixam_mart_store/helper/order_alert_helper.dart';
 import 'package:sixam_mart_store/helper/route_helper.dart';
 import 'package:sixam_mart_store/util/app_constants.dart';
 
@@ -41,6 +41,7 @@ class NotificationHelper {
 
           final Map<NotificationType, Function> notificationActions = {
             NotificationType.order: () {
+              OrderAlertHelper.stop();
               if(Get.find<AuthController>().getModuleType() == 'rental'){
                 Get.to(()=> TripDetailsScreen(tripId: payload.orderId!, fromNotification: true));
               }else{
@@ -138,7 +139,10 @@ class NotificationHelper {
       }else {
         NotificationHelper.showNotification(message, flutterLocalNotificationsPlugin);
 
-        if (message.data['type'] == 'new_order' || message.data['title'] == 'New order placed') {
+        if (OrderAlertHelper.shouldStartAlertFromMessage(message)) {
+          final String orderId = message.data['order_id'].toString();
+          // Continuous beep + vibrate until the app is opened.
+          OrderAlertHelper.start(orderId);
           if(Get.find<AuthController>().getModuleType() == 'rental'){
             TripController tripController = Get.find<TripController>();
             tripController.getTripList(status: 'pending', offset: '1');
@@ -148,7 +152,9 @@ class NotificationHelper {
             Get.find<OrderController>().getPaginatedOrders(1, true);
             Get.find<OrderController>().getCurrentOrders();
           }
-          Get.dialog(NewRequestDialogWidget(orderId: int.parse(message.data['order_id'])));
+          if (!Get.isDialogOpen!) {
+            Get.dialog(NewRequestDialogWidget(orderId: int.parse(orderId)), barrierDismissible: false);
+          }
         }else if(message.data['type'] == 'advertisement') {
           Get.find<AdvertisementController>().getAdvertisementList('1', 'all');
         }
@@ -165,6 +171,7 @@ class NotificationHelper {
 
         final Map<NotificationType, Function> notificationActions = {
           NotificationType.order: () {
+            OrderAlertHelper.stop();
             if(Get.find<AuthController>().getModuleType() == 'rental'){
               Get.to(()=> TripDetailsScreen(tripId: int.parse(message.data['order_id']), fromNotification: true));
             }else{
@@ -322,133 +329,22 @@ class NotificationHelper {
 
 }
 
-
-final AudioPlayer _audioPlayer = AudioPlayer();
-
 /// Background FCM message handler
 @pragma('vm:entry-point')
 Future<dynamic> myBackgroundMessageHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
   customPrint("onBackground: ${message.data}");
+  customPrint("onBackground notification: ${message.notification?.title} / ${message.notification?.body}");
 
-  NotificationBodyModel notificationBody = NotificationHelper.convertNotification(message.data);
-
-  if(notificationBody.notificationType == NotificationType.order) {
-
-    FlutterForegroundTask.initCommunicationPort();
-    await _initService();
-    await _startService(notificationBody.orderId.toString());
+  // Backup if native FCM receiver did not start (plugins may be missing in isolate).
+  if (OrderAlertHelper.shouldStartAlertFromMessage(message)) {
+    await OrderAlertHelper.start(message.data['order_id']?.toString());
   }
 }
 
-/// Initialize Foreground Service
-@pragma('vm:entry-point')
-Future<void> _initService() async {
-  FlutterForegroundTask.init(
-    androidNotificationOptions: AndroidNotificationOptions(
-      channelId: '6ammart',
-      channelName: 'Foreground Service Notification',
-      channelDescription: 'This notification appears when the foreground service is running.',
-      onlyAlertOnce: false,
-    ),
-    iosNotificationOptions: const IOSNotificationOptions(
-      showNotification: false,
-      playSound: false,
-    ),
-    foregroundTaskOptions: ForegroundTaskOptions(
-      eventAction: ForegroundTaskEventAction.repeat(5000),
-      autoRunOnBoot: false,
-      autoRunOnMyPackageReplaced: false,
-      allowWakeLock: true,
-      allowWifiLock: true,
-    ),
-  );
-}
-
-/// Start Foreground Service
-@pragma('vm:entry-point')
-Future<ServiceRequestResult> _startService(String? orderId) async {
-  if (await FlutterForegroundTask.isRunningService) {
-    return FlutterForegroundTask.restartService();
-  } else {
-    return FlutterForegroundTask.startService(
-      serviceId: 256,
-      notificationTitle: 'You got a new order ($orderId)',
-      notificationText: 'Open app and check order details.',
-      callback: startCallback,
-    );
-  }
-}
-
-/// Stop Foreground Service
+/// Kept for existing call sites; stops the continuous new-order alert.
 @pragma('vm:entry-point')
 Future<ServiceRequestResult> stopService() async {
-  try {
-    await _audioPlayer.stop();
-    await _audioPlayer.dispose();
-  } catch (e) {
-    customPrint('Audio dispose error: $e');
-  }
-  return FlutterForegroundTask.stopService();
-}
-
-/// Foreground Service entry point
-@pragma('vm:entry-point')
-void startCallback() {
-  FlutterForegroundTask.setTaskHandler(MyTaskHandler());
-}
-
-/// Foreground Service Task Handler
-class MyTaskHandler extends TaskHandler {
-  AudioPlayer? _localPlayer;
-
-  void _playAudio() {
-    _localPlayer?.play(AssetSource('notification.mp3'));
-  }
-
-  @override
-  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    _localPlayer = AudioPlayer();
-    _playAudio();
-  }
-
-  @override
-  void onRepeatEvent(DateTime timestamp) {
-    _playAudio();
-  }
-
-  @override
-  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
-    await _localPlayer?.dispose();
-    await stopService();
-  }
-
-  @override
-  void onReceiveData(Object data) {
-    _playAudio();
-  }
-
-  @override
-  void onNotificationButtonPressed(String id) {
-    customPrint('onNotificationButtonPressed: $id');
-    if (id == '1') {
-      FlutterForegroundTask.launchApp('/');
-    }
-    stopService();
-  }
-
-  @override
-  void onNotificationPressed() {
-    customPrint('onNotificationPressed');
-    FlutterForegroundTask.launchApp('/');
-    stopService();
-  }
-
-  @override
-  void onNotificationDismissed() {
-    FlutterForegroundTask.updateService(
-      notificationTitle: 'You got a new order!',
-      notificationText: 'Open app and check order details.',
-    );
-  }
+  await OrderAlertHelper.stop();
+  return const ServiceRequestSuccess();
 }

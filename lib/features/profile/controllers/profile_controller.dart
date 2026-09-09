@@ -38,9 +38,11 @@ class ProfileController extends GetxController implements GetxService {
   bool _isStoreActive = true;
   bool get isStoreActive => _isStoreActive;
 
-  void setStoreStatus(bool value) {
+  void setStoreStatus(bool value, {bool shouldUpdate = true}) {
     _isStoreActive = value;
-    update();
+    if (shouldUpdate) {
+      update();
+    }
   }
 
   void hideLowStockWarning(){
@@ -54,6 +56,10 @@ class ProfileController extends GetxController implements GetxService {
       Get.find<SplashController>().setModule(_profileModel!.stores![0].module!.id, _profileModel!.stores![0].module!.moduleType);
       profileServiceInterface.updateHeader(_profileModel!.stores![0].module!.id);
       _allowModulePermission(_profileModel?.roles);
+      // Keep configure Status switch in sync: active=true means restaurant is open.
+      if (_profileModel!.stores != null && _profileModel!.stores!.isNotEmpty) {
+        _isStoreActive = _profileModel!.stores![0].active == true;
+      }
     }
     update();
   }

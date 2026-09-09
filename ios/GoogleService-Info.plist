@@ -3,23 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>491987943015-8url62sdkjqrr4jknagreu85uji8blg9.apps.googleusercontent.com</string>
+	<string>634126486279-v2tre3fvt9ih9bhkj20hmipuhr0gkcae.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.491987943015-8url62sdkjqrr4jknagreu85uji8blg9</string>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>491987943015-6736d85ac62kj6o7040p8p6atatlhegh.apps.googleusercontent.com</string>
+	<string>com.googleusercontent.apps.634126486279-v2tre3fvt9ih9bhkj20hmipuhr0gkcae</string>
 	<key>API_KEY</key>
-	<string>AIzaSyBzHWIQp_RVmD4zN5lSCnBy1SPkvfHrIMQ</string>
+	<string>AIzaSyDlernFJWbFUQnZz5swic1bcpiqk1jnmuE</string>
 	<key>GCM_SENDER_ID</key>
-	<string>491987943015</string>
+	<string>634126486279</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.sixamtech.6amMartStore</string>
+	<string>com.sabhkush.skpartner</string>
 	<key>PROJECT_ID</key>
-	<string>stackmart-500c7</string>
+	<string>sabhkushfcm</string>
 	<key>STORAGE_BUCKET</key>
-	<string>stackmart-500c7.appspot.com</string>
+	<string>sabhkushfcm.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:491987943015:ios:75dfdc8a120630658f1ec2</string>
+	<string>1:634126486279:ios:c81c54f17930cd0e76d3a2</string>
 </dict>
 </plist>

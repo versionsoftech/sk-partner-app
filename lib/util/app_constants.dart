@@ -2,8 +2,8 @@ import 'package:sixam_mart_store/features/language/domain/models/language_model.
 import 'package:sixam_mart_store/util/images.dart';
 
 class AppConstants {
-  static const String appName = 'SK Partner';
-  static const double appVersion = 4.0; ///Flutter SDK: 3.44.2
+  static const String appName = 'SabhKush Partner';
+  static const double appVersion = 6.0; ///Flutter SDK: 3.44.2
 
   static const String fontFamily = 'Roboto';
   static const double limitOfPickedVideoSizeInMB = 50;

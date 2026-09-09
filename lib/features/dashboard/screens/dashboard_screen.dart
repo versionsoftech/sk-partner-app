@@ -20,6 +20,7 @@ import 'package:sixam_mart_store/features/rental_module/provider/screens/provide
 import 'package:sixam_mart_store/features/rental_module/trips/screens/trip_history_screen.dart';
 import 'package:sixam_mart_store/features/store/screens/store_screen.dart';
 import 'package:sixam_mart_store/features/subscription/controllers/subscription_controller.dart';
+import 'package:sixam_mart_store/helper/order_alert_helper.dart';
 import 'package:sixam_mart_store/util/dimensions.dart';
 import 'package:sixam_mart_store/util/images.dart';
 
@@ -31,17 +32,21 @@ class DashboardScreen extends StatefulWidget {
   DashboardScreenState createState() => DashboardScreenState();
 }
 
-class DashboardScreenState extends State<DashboardScreen> {
+class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   PageController? _pageController;
   int _pageIndex = 0;
   late List<Widget> _screens;
   FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
   DisbursementHelper disbursementHelper = DisbursementHelper();
   bool _canExit = false;
+  bool _wasPaused = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // App UI is open — stop continuous order alert.
+    OrderAlertHelper.stop();
     AuthController authController = Get.find<AuthController>();
 
     _pageIndex = widget.pageIndex;
@@ -67,6 +72,23 @@ class DashboardScreenState extends State<DashboardScreen> {
 
     outOfStockBottomSheet();
 
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      _wasPaused = true;
+    } else if (state == AppLifecycleState.resumed && _wasPaused) {
+      _wasPaused = false;
+      // Vendor opened/returned to app from background — stop continuous beep.
+      OrderAlertHelper.stop();
+    }
   }
 
   Future<void> showDisbursementWarningMessage() async{
@@ -183,6 +205,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                       title: 'wallet'.tr,
                       selectedIcon: Images.walletSelect,
                       unSelectedIcon: Images.walletUnSelect,
+                      useRupeeIcon: true,
                       isSelected: _pageIndex == 3,
                       onTap: (profileController.profileModel == null || profileController.modulePermission == null) ? null : () => _setPage(3),
                     ),
