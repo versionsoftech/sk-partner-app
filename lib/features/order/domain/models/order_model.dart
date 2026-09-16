@@ -96,6 +96,11 @@ class OrderModel {
   String? benefitType;
   String? deliveryOfferType;
   double? deliveryFeeReductionAmount;
+  int? restaurantDealId;
+  double? restaurantDealDiscount;
+  bool? hasRestaurantDeal;
+  String? restaurantDealLabel;
+  RestaurantDealInfo? restaurantDeal;
 
   OrderModel({
     this.id,
@@ -161,6 +166,11 @@ class OrderModel {
     this.benefitType,
     this.deliveryOfferType,
     this.deliveryFeeReductionAmount,
+    this.restaurantDealId,
+    this.restaurantDealDiscount,
+    this.hasRestaurantDeal,
+    this.restaurantDealLabel,
+    this.restaurantDeal,
   });
 
   OrderModel.fromJson(Map<String, dynamic> json) {
@@ -246,6 +256,12 @@ class OrderModel {
     benefitType = json['benefit_type'];
     deliveryOfferType = json['delivery_offer_type'];
     deliveryFeeReductionAmount = json['delivery_fee_reduction_amount']?.toDouble();
+    restaurantDealId = json['restaurant_deal_id'];
+    restaurantDealDiscount = json['restaurant_deal_discount']?.toDouble();
+    hasRestaurantDeal = json['has_restaurant_deal'] == 1 || json['has_restaurant_deal'] == true || (json['restaurant_deal'] != null);
+    restaurantDealLabel = json['restaurant_deal_label']?.toString();
+    restaurantDeal = json['restaurant_deal'] != null ? RestaurantDealInfo.fromJson(json['restaurant_deal']) : null;
+    restaurantDealLabel ??= restaurantDeal?.badgeLabel ?? restaurantDeal?.title;
   }
 
   Map<String, dynamic> toJson() {
@@ -318,7 +334,75 @@ class OrderModel {
     data['benefit_type'] = benefitType;
     data['delivery_offer_type'] = deliveryOfferType;
     data['delivery_fee_reduction_amount'] = deliveryFeeReductionAmount;
+    data['restaurant_deal_id'] = restaurantDealId;
+    data['restaurant_deal_discount'] = restaurantDealDiscount;
+    data['has_restaurant_deal'] = hasRestaurantDeal;
+    data['restaurant_deal_label'] = restaurantDealLabel;
+    if (restaurantDeal != null) {
+      data['restaurant_deal'] = restaurantDeal!.toJson();
+    }
     return data;
+  }
+}
+
+class RestaurantDealInfo {
+  int? id;
+  String? title;
+  String? badgeLabel;
+  String? dealType;
+  double? discountPercent;
+  double? discountAmount;
+  bool? isBogo;
+  String? message;
+  String? offerLabel;
+  List<RestaurantDealInfo>? appliedDeals;
+
+  RestaurantDealInfo({
+    this.id,
+    this.title,
+    this.badgeLabel,
+    this.dealType,
+    this.discountPercent,
+    this.discountAmount,
+    this.isBogo,
+    this.message,
+    this.offerLabel,
+    this.appliedDeals,
+  });
+
+  RestaurantDealInfo.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    title = json['title']?.toString();
+    badgeLabel = json['badge_label']?.toString();
+    dealType = json['deal_type']?.toString();
+    discountPercent = json['discount_percent']?.toDouble();
+    discountAmount = json['discount_amount']?.toDouble() ?? json['line_discount']?.toDouble();
+    isBogo = json['is_bogo'] == 1 || json['is_bogo'] == true || json['deal_type'] == 'bogo';
+    message = json['message']?.toString();
+    offerLabel = json['offer_label']?.toString() ?? badgeLabel ?? title;
+    if (json['applied_deals'] is List) {
+      appliedDeals = [];
+      for (final dynamic row in json['applied_deals']) {
+        if (row is Map) {
+          appliedDeals!.add(RestaurantDealInfo.fromJson(Map<String, dynamic>.from(row)));
+        }
+      }
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'badge_label': badgeLabel,
+      'deal_type': dealType,
+      'discount_percent': discountPercent,
+      'discount_amount': discountAmount,
+      'is_bogo': isBogo,
+      'message': message,
+      'offer_label': offerLabel,
+      if (appliedDeals != null) 'applied_deals': appliedDeals!.map((e) => e.toJson()).toList(),
+    };
   }
 }
 

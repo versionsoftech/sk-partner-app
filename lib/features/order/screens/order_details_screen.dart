@@ -527,6 +527,41 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> with WidgetsBin
                           },
                           icon: Icon(_isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Theme.of(context).primaryColor))
                       ]),
+                      if (order.hasRestaurantDeal == true)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(children: [
+                                  Icon(Icons.local_offer, size: 16, color: Theme.of(context).primaryColor),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: Text(
+                                    '${order.restaurantDealLabel ?? 'offer'.tr}'
+                                        '${(order.restaurantDealDiscount ?? 0) > 0 ? ' (-${PriceConverterHelper.convertPrice(order.restaurantDealDiscount)})' : ''}',
+                                    style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                                  )),
+                                ]),
+                                if ((order.restaurantDeal?.appliedDeals?.length ?? 0) > 1)
+                                  ...order.restaurantDeal!.appliedDeals!.map((d) => Padding(
+                                    padding: const EdgeInsets.only(top: 4, left: 22),
+                                    child: Text(
+                                      '• ${d.badgeLabel ?? d.title ?? 'offer'.tr}'
+                                          '${(d.discountAmount ?? 0) > 0 ? ' (-${PriceConverterHelper.convertPrice(d.discountAmount)})' : ''}',
+                                      style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                                    ),
+                                  )),
+                              ],
+                            ),
+                          ),
+                        ),
                       if (_isExpanded)
                         Column(children: [
                           Divider(thickness: 1, color: Theme.of(context).hintColor.withValues(alpha: 0.1)),
@@ -1216,7 +1251,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> with WidgetsBin
                         SizedBox(height: Get.find<SplashController>().getModuleConfig(order.moduleType).addOn! ? 10 : 0),
 
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          Text('discount'.tr, style: robotoRegular),
+                          Text(
+                            (order.hasRestaurantDeal == true)
+                                ? '${'offer'.tr}${(order.restaurantDealLabel != null && order.restaurantDealLabel!.isNotEmpty) ? ' (${order.restaurantDealLabel})' : ''}'
+                                : 'discount'.tr,
+                            style: robotoRegular,
+                          ),
                           Row(mainAxisSize: MainAxisSize.min, children: [
                             order.prescriptionOrder! ? IconButton(
                               constraints: const BoxConstraints(maxHeight: 36),
@@ -1228,6 +1268,33 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> with WidgetsBin
                         ]),
                         const SizedBox(height: 10),
 
+                        (order.hasRestaurantDeal == true && (order.restaurantDealDiscount ?? 0) > 0) ? Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                Icon(Icons.local_offer_outlined, size: 16, color: Theme.of(context).primaryColor),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text(
+                                  order.restaurantDeal?.message?.isNotEmpty == true
+                                      ? order.restaurantDeal!.message!
+                                      : (order.restaurantDealLabel ?? 'offer'.tr),
+                                  style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                                )),
+                              ]),
+                              if ((order.restaurantDeal?.appliedDeals?.length ?? 0) > 1)
+                                ...order.restaurantDeal!.appliedDeals!.map((d) => Padding(
+                                  padding: const EdgeInsets.only(top: 4, left: 22),
+                                  child: Text(
+                                    '• ${d.badgeLabel ?? d.title ?? 'offer'.tr}'
+                                        '${(d.discountAmount ?? 0) > 0 ? ' (-${PriceConverterHelper.convertPrice(d.discountAmount)})' : ''}',
+                                    style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                                  ),
+                                )),
+                            ],
+                          ),
+                        ) : const SizedBox(),
                         couponDiscount > 0 ? Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                           order.benefitType == 'coupon' ? Text('pro_coupon_discount'.tr, style: robotoRegular) : Text('coupon_discount'.tr, style: robotoRegular),
                           Text(

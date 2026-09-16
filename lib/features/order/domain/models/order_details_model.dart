@@ -1,4 +1,5 @@
 import 'package:sixam_mart_store/features/store/domain/models/item_model.dart';
+import 'package:sixam_mart_store/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart_store/helper/type_converter.dart';
 
 class OrderDetailsModel {
@@ -20,6 +21,9 @@ class OrderDetailsModel {
   int? itemCampaignId;
   double? totalAddOnPrice;
   bool? isEditable;
+  String? offerLabel;
+  bool? isOfferItem;
+  RestaurantDealInfo? restaurantDeal;
 
   OrderDetailsModel({
     this.id,
@@ -40,6 +44,9 @@ class OrderDetailsModel {
     this.itemCampaignId,
     this.totalAddOnPrice,
     this.isEditable,
+    this.offerLabel,
+    this.isOfferItem,
+    this.restaurantDeal,
   });
 
   OrderDetailsModel.fromJson(Map<String, dynamic> json) {
@@ -65,17 +72,6 @@ class OrderDetailsModel {
     }
     print("---------order model> ${json [ 'variation' ]}");
     print("---------order model> $variation");
-    // if (json['variation'] != null && json['variation'].isNotEmpty) {
-    //   if(json['variation'][0]['values'] != null) {
-    //     json['variation'].forEach((v) {
-    //       foodVariation!.add(FoodVariation.fromJson(v));
-    //     });
-    //   }else {
-    //     json['variation'].forEach((v) {
-    //       variation!.add(Variation.fromJson(v));
-    //     });
-    //   }
-    // }
     if (json['add_ons'] != null) {
       addOns = [];
       json['add_ons'].forEach((v) {
@@ -92,6 +88,13 @@ class OrderDetailsModel {
     itemCampaignId = json['item_campaign_id'];
     totalAddOnPrice = json['total_add_on_price']?.toDouble();
     isEditable = TypeConverter.getBool(json['is_editable']);
+    restaurantDeal = json['restaurant_deal'] != null
+        ? RestaurantDealInfo.fromJson(json['restaurant_deal'])
+        : (json['item_details'] is Map && json['item_details']['restaurant_deal'] != null
+            ? RestaurantDealInfo.fromJson(json['item_details']['restaurant_deal'])
+            : null);
+    offerLabel = json['offer_label']?.toString() ?? restaurantDeal?.offerLabel ?? restaurantDeal?.badgeLabel ?? restaurantDeal?.title;
+    isOfferItem = json['is_offer_item'] == 1 || json['is_offer_item'] == true || restaurantDeal != null;
   }
 
   Map<String, dynamic> toJson() {
@@ -121,6 +124,11 @@ class OrderDetailsModel {
     data['item_campaign_id'] = itemCampaignId;
     data['total_add_on_price'] = totalAddOnPrice;
     data['is_editable'] = isEditable;
+    data['offer_label'] = offerLabel;
+    data['is_offer_item'] = isOfferItem;
+    if (restaurantDeal != null) {
+      data['restaurant_deal'] = restaurantDeal!.toJson();
+    }
     return data;
   }
 }
